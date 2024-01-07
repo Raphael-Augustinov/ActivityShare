@@ -40,18 +40,17 @@ class LoginActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-            println("LoginActivity onCreate called")
+        println("LoginActivity onCreate called")
         // Initialize Firebase Auth
         auth = Firebase.auth
-            println("auth: $auth")
         // Configure Google Sign-In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.your_web_client_id))
             .requestEmail()
             .build()
-                println("gso: $gso")
+        println("gso: $gso")
         googleSignInClient = GoogleSignIn.getClient(this, gso)
-            println("googleSignInClient: $googleSignInClient")
+        println("googleSignInClient: $googleSignInClient")
         // Initialize Google Sign-In launcher
         googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             println("googleSignInLauncher result: $result")
@@ -63,7 +62,7 @@ class LoginActivity : ComponentActivity() {
                     firebaseAuthWithGoogle(account.idToken!!)
                 } catch (e: ApiException) {
                     // Handle exception
-                        println("exception: $e")
+                    println("exception: $e")
                 }
             }
             else {
@@ -84,19 +83,16 @@ class LoginActivity : ComponentActivity() {
 
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
-            println("auth credential: $credential")
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
-                        println("signInWithCredential:success")
                     val user = auth.currentUser
                     Log.d("LoginActivity", "User Name: ${user?.displayName}")
                     startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                     finish()
                 } else {
                     // Handle sign in failure
-                        println("signInWithCredential:failure")
                     Log.w("LoginActivity", "signInWithCredential:failure", task.exception)
                 }
             }
