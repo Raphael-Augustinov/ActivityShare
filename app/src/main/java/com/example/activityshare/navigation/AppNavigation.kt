@@ -9,6 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.StepsRecord
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,9 +23,17 @@ import androidx.navigation.compose.rememberNavController
 import com.example.activityshare.screens.MainScreen
 import com.example.activityshare.screens.FriendsScreen
 import com.example.activityshare.screens.SettingsScreen
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    healthConnectClient: HealthConnectClient,
+    userProfilePicUrl: String,
+    userEmail: String,
+    onLogout: () -> Unit
+) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -57,13 +70,13 @@ fun AppNavigation() {
                 modifier = Modifier.padding(paddingValues)
             ){
                 composable(route = Screens.Mainscreen.name){
-                    MainScreen()
+                    MainScreen(healthConnectClient)
                 }
                 composable(route = Screens.FriendsScreen.name){
                     FriendsScreen()
                 }
                 composable(route = Screens.SettingsScreen.name){
-                    SettingsScreen()
+                    SettingsScreen(userProfilePicUrl, userEmail, onLogout)
                 }
             }
     }
