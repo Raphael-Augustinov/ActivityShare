@@ -1,5 +1,6 @@
 package com.example.activityshare
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -25,10 +26,16 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
+import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import com.example.activityshare.navigation.AppNavigation
 import com.example.activityshare.ui.theme.ActivityShareTheme
+import com.example.activityshare.viewModels.MainViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -48,8 +55,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private val permissions = setOf(
         HealthPermission.getReadPermission(StepsRecord::class),
-        HealthPermission.getReadPermission(DistanceRecord::class)
+        HealthPermission.getReadPermission(DistanceRecord::class),
+        HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
+        HealthPermission.getReadPermission(SleepSessionRecord::class)
     )
+    private lateinit var mainViewModel: MainViewModel
+    private var isViewModelInitialized = false
     private val requestPermission =
         registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { grantedPermissions ->
             println("grantedPermissions: $grantedPermissions")
@@ -75,6 +86,9 @@ class MainActivity : ComponentActivity() {
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
+        mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
+
+
         setContent {
             ActivityShareTheme {
                 // Check if the user is null and redirect if necessary
@@ -85,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     checkPermissionsAndRun()
                     println("permissions checked")
                     AppNavigation(
-                        HealthConnectClient.getOrCreate(this),
+                        mainViewModel = mainViewModel,
                         userProfilePicUrl = currentUser.photoUrl.toString(),
                         userEmail = currentUser.email ?: "",
                         onLogout = {
@@ -101,6 +115,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     )
+                    isViewModelInitialized = true
                 } else {
                     // Redirect to login
                     Intent(this@MainActivity, LoginActivity::class.java).also {
@@ -112,6 +127,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (isViewModelInitialized)
+            mainViewModel.refreshHealthData(this)
+    }
 
     @Composable
     private fun CheckHealthConnectAvailability() {
@@ -170,19 +190,11 @@ class MainActivity : ComponentActivity() {
             println("granted: $granted")
             if (granted.containsAll(permissions)) {
                 // Permissions already granted; proceed with inserting or reading data
-                val startOfDay =
-                    ZonedDateTime.now(ZoneId.systemDefault()).toLocalDate().atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant()
-                val now = Instant.now()
-//            val stepCount = readStepsByTimeRange(healthConnectClient, startOfDay, Instant.now())
-//            val distance = readDistanceByTimeRange(healthConnectClient, startOfDay, Instant.now())
-
-//            val statusTextView = findViewById<TextView>(R.id.textView1)
-//            statusTextView.text = "Steps: $stepCount"
-//
-//            val statusTextView4 = findViewById<TextView>(R.id.textView4)
-//            statusTextView4.text = "Distance: $distance"
+//                val startOfDay =
+//                    ZonedDateTime.now(ZoneId.systemDefault()).toLocalDate().atStartOfDay(
+//                        ZoneId.systemDefault()
+//                    ).toInstant()
+//                val now = Instant.now()
                 println("Permissions already granted")
             } else {
                 println("requesting permissions")
@@ -204,7 +216,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 
 }
 

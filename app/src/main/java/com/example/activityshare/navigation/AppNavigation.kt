@@ -23,13 +23,14 @@ import androidx.navigation.compose.rememberNavController
 import com.example.activityshare.screens.MainScreen
 import com.example.activityshare.screens.FriendsScreen
 import com.example.activityshare.screens.SettingsScreen
+import com.example.activityshare.viewModels.MainViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
 @Composable
 fun AppNavigation(
-    healthConnectClient: HealthConnectClient,
+    mainViewModel: MainViewModel,
     userProfilePicUrl: String,
     userEmail: String,
     onLogout: () -> Unit
@@ -70,7 +71,7 @@ fun AppNavigation(
                 modifier = Modifier.padding(paddingValues)
             ){
                 composable(route = Screens.Mainscreen.name){
-                    MainScreen(healthConnectClient)
+                    MainScreen(mainViewModel)
                 }
                 composable(route = Screens.FriendsScreen.name){
                     FriendsScreen()
