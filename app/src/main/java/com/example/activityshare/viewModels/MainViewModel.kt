@@ -15,12 +15,22 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
+data class UserHealthData(
+    var steps: Int = 0,
+    var distance: Int = 0,
+    var calories: Int = 0
+)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     //implement live data for the step count and distance, use the readStepsToday and readDistanceToday functions to retrieve the data
@@ -47,6 +57,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             healthConnectClient = HealthConnectClient.getOrCreate(appContext)
 
             fetchHealthData(healthConnectClient)
+            saveOrUpdateHealthData()
         }
     }
 
@@ -56,6 +67,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             healthConnectClient = HealthConnectClient.getOrCreate(appContext)
 
             fetchHealthData(healthConnectClient)
+            saveOrUpdateHealthData()
         }
     }
 
@@ -67,11 +79,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _calories.value = readCaloriesToday(healthConnectClient)
     }
 
+    fun saveOrUpdateHealthData() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        userId?.let { uid ->
+            val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+            println("currentDate: $currentDate")
+            val databaseRef = FirebaseDatabase.getInstance().getReference("healthData/$uid/$currentDate")
+            println("databaseRef: $databaseRef")
+
+            databaseRef.get().addOnSuccessListener { dataSnapshot ->
+                val healthData = dataSnapshot.getValue(UserHealthData::class.java) ?: UserHealthData()
+                healthData.steps = _steps.value
+                healthData.distance = _distance.value
+                healthData.calories = _calories.value
+
+                databaseRef.setValue(healthData)
+                    .addOnSuccessListener {
+                        // Handle success, e.g., show a toast
+                    }
+                    .addOnFailureListener {
+                        // Handle failure, e.g., show an error message
+                    }
+            }.addOnFailureListener {
+                // Handle failure in getting the data
+            }
+        }
+    }
 }
 
 suspend fun readCaloriesToday(healthConnectClient: HealthConnectClient): Int {
     val startOfDay = ZonedDateTime.now(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
-    try {
+    return try {
         val response = healthConnectClient.aggregate(
             AggregateRequest(
                 metrics = setOf(TotalCaloriesBurnedRecord.ENERGY_TOTAL),
@@ -81,10 +119,10 @@ suspend fun readCaloriesToday(healthConnectClient: HealthConnectClient): Int {
         // The result may be null if no data is available in the time range
         val calories = response[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.inKilocalories ?: 0.0
         println("calories: $calories")
-        return calories.toInt()
+        calories.toInt()
     } catch (e: Exception) {
         println("Error retrieving calories data: ${e.message}")
-        return 0
+        0
     }
 }
 
