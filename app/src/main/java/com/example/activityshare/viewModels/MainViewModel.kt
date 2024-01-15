@@ -3,6 +3,7 @@ package com.example.activityshare.viewModels
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -10,10 +11,7 @@ import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
-import androidx.health.connect.client.units.Energy
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -79,7 +77,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _calories.value = readCaloriesToday(healthConnectClient)
     }
 
-    fun saveOrUpdateHealthData() {
+    private fun saveOrUpdateHealthData() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         userId?.let { uid ->
             val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
@@ -96,9 +94,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 databaseRef.setValue(healthData)
                     .addOnSuccessListener {
                         // Handle success, e.g., show a toast
+                        Log.e("MainViewModel", "Health data saved successfully")
                     }
                     .addOnFailureListener {
                         // Handle failure, e.g., show an error message
+                        Log.e("MainViewModel", "Error saving health data", it)
                     }
             }.addOnFailureListener {
                 // Handle failure in getting the data

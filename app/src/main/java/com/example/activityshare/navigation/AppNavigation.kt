@@ -9,24 +9,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.health.connect.client.HealthConnectClient
-import androidx.health.connect.client.PermissionController
-import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.DistanceRecord
-import androidx.health.connect.client.records.StepsRecord
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-//import rememberNavController from androidx.navigation.compose
 import androidx.navigation.compose.rememberNavController
 import com.example.activityshare.screens.MainScreen
 import com.example.activityshare.screens.FriendsScreen
+import com.example.activityshare.screens.GenerateQRScreen
+import com.example.activityshare.screens.ScanQRScreen
 import com.example.activityshare.screens.SettingsScreen
 import com.example.activityshare.viewModels.MainViewModel
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
 
 @Composable
 fun AppNavigation(
@@ -67,17 +60,25 @@ fun AppNavigation(
     ) { paddingValues ->
             NavHost(
                 navController = navController,
-                startDestination = Screens.Mainscreen.name,
+                startDestination = Screens.MainScreen.name,
                 modifier = Modifier.padding(paddingValues)
             ){
-                composable(route = Screens.Mainscreen.name){
+                composable(route = Screens.MainScreen.name){
                     MainScreen(mainViewModel)
                 }
                 composable(route = Screens.FriendsScreen.name){
-                    FriendsScreen()
+                    FriendsScreen(navController)
                 }
                 composable(route = Screens.SettingsScreen.name){
                     SettingsScreen(userProfilePicUrl, userEmail, onLogout)
+                }
+                composable(route = Screens.GenerateQRScreen.name) {
+                    // Your Generate QR Code Screen here
+                    GenerateQRScreen(navController)
+                }
+                composable(route = Screens.ScanQRScreen.name) {
+                    // Your Scan QR Code Screen here
+                    ScanQRScreen(navController)
                 }
             }
     }

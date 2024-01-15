@@ -1,7 +1,9 @@
 package com.example.activityshare.navigation
 
 enum class Screens {
-    Mainscreen,
+    MainScreen,
     FriendsScreen,
-    SettingsScreen
+    SettingsScreen,
+    GenerateQRScreen,
+    ScanQRScreen
 }

@@ -18,7 +18,7 @@ data class NavItem(
 
 val listOfNavItems = listOf(
     NavItem(
-        route = Screens.Mainscreen.name,
+        route = Screens.MainScreen.name,
         label = "Home",
         filledIcon = Icons.Default.Home,
         outlinedIcon = Icons.Outlined.Home

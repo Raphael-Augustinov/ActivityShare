@@ -3,6 +3,7 @@ package com.example.activityshare
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.service.autofill.UserData
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -40,7 +41,16 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
+data class UserData(
+    val uid: String?,
+    val displayName: String?,
+    val email: String?
+)
 
 class LoginActivity : ComponentActivity() {
 
@@ -97,10 +107,37 @@ class LoginActivity : ComponentActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
+                    println("signInWithCredential:success")
                     val user = auth.currentUser
-                    Log.d("LoginActivity", "User Name: ${user?.displayName}")
-                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                    finish()
+                    val userData = UserData(user?.uid, user?.displayName, user?.email)
+                    val userRef = FirebaseDatabase.getInstance().getReference("users").child(user?.uid!!)
+                    userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if (!snapshot.exists()) {
+                                println("User data does not exist in Realtime Database")
+                                userRef.setValue(userData)
+                                    .addOnSuccessListener {
+                                        Log.d("LoginActivity", "User data saved in Realtime Database")
+                                        // Proceed with navigating to MainActivity
+                                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                                        finish()
+                                    }
+                                    .addOnFailureListener {
+                                        Log.d("LoginActivity", "Failed to save user data in Realtime Database", it)
+                                    }
+                            }
+                            else {
+                                Log.d("LoginActivity", "User data exists in Realtime Database")
+                                // Proceed with navigating to MainActivity
+                                startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                                finish()
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.d("LoginActivity", "Failed to read user data from Realtime Database", error.toException())
+                        }
+                    })
                 } else {
                     // Handle sign in failure
                     Log.w("LoginActivity", "signInWithCredential:failure", task.exception)
